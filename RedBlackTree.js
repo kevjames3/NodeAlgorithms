@@ -36,6 +36,17 @@ exports.RedBlackTree = function (){
 	}
 
 	//Public Methods
+	self.Depth = function () {
+		function DepthHelper(node){
+			if(!node){
+				return 0;
+			} else{
+				return Math.max(DepthHelper(node.Left), DepthHelper(node.Right)) + 1;
+			}
+		}
+		return DepthHelper(rootNode);
+	}
+
 	self.Add = function(item){
 		if(rootNode == undefined){
 			rootNode = new Node(item);
@@ -131,5 +142,8 @@ if (require.main === module) {
 	foo.Add(-1);
 	foo.Add(-2);
 	foo.Add(0);
+	foo.Add(2);
+	foo.Add(10);
 	foo.PrintTree();
+	console.log(foo.Depth());
 }
