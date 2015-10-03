@@ -36,7 +36,7 @@ exports.RedBlackTree = function (){
 	}
 
 	//Public Methods
-	self.Depth = function () {
+	self.Depth = function (starterNode) {
 		function DepthHelper(node){
 			if(!node){
 				return 0;
@@ -44,7 +44,11 @@ exports.RedBlackTree = function (){
 				return Math.max(DepthHelper(node.Left), DepthHelper(node.Right)) + 1;
 			}
 		}
-		return DepthHelper(rootNode);
+		if(!starterNode){
+			starterNode = rootNode;
+		}
+
+		return DepthHelper(starterNode);
 	}
 
 	self.Add = function(item){
@@ -82,53 +86,42 @@ exports.RedBlackTree = function (){
 	}
 
 	self.PrintTree = function(){
-		var PrintTreeHelper = function(nodes, depth){
-			if(nodes.filter(function(value){ return value != undefined }).length == 0){
-				return;
-			}
+		var queue = [];
 
-			var queue = [];
-			var lineQueue = [];
-			while(nodes.length > 0){
-				var node = nodes.shift();
-				
+		var currentDepth = self.Depth();
+		var currDistance = 0;
+		queue.push([rootNode, 0]);
+		
+		console.log("Current Tree");
+		console.log("----");
+		process.stdout.write("Level " + currDistance + ":");
+		while(queue.length > 0){
+			var obj = queue.shift();
+			if(obj){
+				var node = obj[0];
+				var distance = obj[1];
+
+				if(!node){
+					process.stdout.write(" ");
+					continue;
+				}
+
+				if(currDistance < distance){
+					console.log("");
+					currDistance = distance;
+					process.stdout.write("Level " + currDistance + ":");
+				}
+
 				if(node){
-					queue.push(node.Left);
-					queue.push(node.Right);
+					queue.push([node.Left, currDistance + 1]);
+					queue.push([node.Right, currDistance + 1]);
 
-					if(node.Left){
-						lineQueue.push("|");
-					} else {
-						lineQueue.push("");
-					}
-
-					if(node.Right){
-						lineQueue.push("\\");
-					} else {
-						lineQueue.push("");
-					}
-
-					process.stdout.write(chalk[node.Color](node.Value) + Array(depth + 1).join(' '));
-				} else {
-					process.stdout.write(Array(depth + 1).join(''));
-					lineQueue.push("");
+					process.stdout.write(" " + chalk[node.Color](node.Value) + " ");
 				}
 			}
-			console.log("");
-			
-			lineQueue.forEach(function(item){
-				process.stdout.write(item + Array(depth + 1).join(' '));
-			});
-			console.log("");
-
-			PrintTreeHelper(queue, depth + 1);
 		}
-
-		var queue = [];
-		var depth = 0;
-
-		queue.push(rootNode);
-		PrintTreeHelper(queue, depth);		
+		console.log("");
+		console.log("----");
 	}
 
 	return self;
@@ -145,5 +138,5 @@ if (require.main === module) {
 	foo.Add(2);
 	foo.Add(10);
 	foo.PrintTree();
-	console.log(foo.Depth());
+	//console.log(foo.Depth());
 }
