@@ -310,7 +310,19 @@ exports.RedBlackTree = function(userCompareFunction) {
     }
 
     self.Contains = function(item) {
-
+    	var result = false;
+    	var node = rootNode;
+    	while(!node.NilNode){
+    		if(compareFunction(item, node.Value) == 0){
+    			result = true;
+    			break;
+    		} else if(compareFunction(item, node.Value) < 0){
+    			node = node.Left();
+    		} else { // > 0
+    			node = node.Right();
+    		}
+    	}
+    	return result;
     }
 
     self.PrintTree = function() {
@@ -373,5 +385,9 @@ if (require.main === module) {
     foo.Insert(2);
     foo.Insert(10);
     foo.PrintTree();
+
+    console.log("Contains 9: " + foo.Contains(9));
+    console.log("Contains 10: " + foo.Contains(10));
+    console.log("Contains 0: " + foo.Contains(0));
     //console.log(foo.Depth());
 }
