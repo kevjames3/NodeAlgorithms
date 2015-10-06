@@ -12,10 +12,17 @@ if (!String.prototype.format) {
     };
 }
 
-exports.RedBlackTree = function() {
+exports.RedBlackTree = function(userCompareFunction) {
     //Init
     var self = this;
     var rootNode;
+    var compareFunction = function(val1, val2){
+    	return val1 - val2;
+    }
+
+    if(userCompareFunction){
+    	compareFunction = userCompareFunction;
+    }
 
     //////////////////
     //Private
@@ -148,18 +155,27 @@ exports.RedBlackTree = function() {
     }
 
     function RotateLeft(node) {
+    	var nodeParent = node.Parent();
     	var rightChild = node.Right();
     	var rightChildsLeft = rightChild.Left();
 
     	//Rotate
+    	if(nodeParent){
+    		if(node.IsRightChild()){
+    			nodeParent.Right(rightChild); 
+	    	} else {
+	    		nodeParent.Left(rightChild);
+	    	}
+    	}
+    	
     	rightChild.Left(node);
-
     	if(!rightChildsLeft.NilNode){
     		node.Right(rightChildsLeft);
     	} else {
     		node.RemoveRight();
     	}
     	
+
     	if(node == rootNode){
     		rootNode = rightChild;
     		rootNode.RemoveParent();
@@ -167,10 +183,19 @@ exports.RedBlackTree = function() {
     }
 
     function RotateRight(node) {
+    	var nodeParent = node.Parent();
     	var leftChild = node.Left();
     	var leftChildsRight = leftChild.Right();
 
     	//Rotate
+    	if(nodeParent){
+    		if(node.IsRightChild()){
+    			nodeParent.Right(leftChild); 
+	    	} else {
+	    		nodeParent.Left(leftChild);
+	    	}
+    	}
+
     	leftChild.Right(node);
     	if(!leftChildsRight.NilNode){
     		node.Right(rightChildsLeft);
@@ -184,10 +209,6 @@ exports.RedBlackTree = function() {
     	}
     }
 
-    function Compare(val1, val2) {
-        return val1 - val2;
-    }
-
     function TreeInsert(item) {
         var newNode = undefined;
         if (rootNode == undefined) {
@@ -197,7 +218,7 @@ exports.RedBlackTree = function() {
             var currentNode = rootNode;
             var nextNode = undefined;
             while (true) {
-                if (Compare(item, currentNode.Value) <= 0) {
+                if (compareFunction(item, currentNode.Value) <= 0) {
                     nextNode = currentNode.Left();
                     if (nextNode.NilNode) {
                         newNode = currentNode.Left(new Node(item));
@@ -217,58 +238,8 @@ exports.RedBlackTree = function() {
         return newNode;
     }
 
-    //////////////////
-    //Public Methods
-    //////////////////
-
-    self.Depth = function(starterNode) {
-        function DepthHelper(node) {
-            if (node.NilNode) {
-                return 0;
-            } else {
-                return Math.max(DepthHelper(node.Left()), DepthHelper(node.Right())) + 1;
-            }
-        }
-        if (!starterNode) {
-            starterNode = rootNode;
-        }
-
-        return DepthHelper(starterNode);
-    }
-
-    //    Case 1:
-    // 1. Uncle is Red
-
-    // Solution for Case 1:
-    // 1. Swap colors of Parent, Uncle, and Grandparent
-    // 2. Grandparent becomes the new node to check for violations
-
-    // Case 2:
-    // 1. Uncle is Black
-    // 2a. Node is a Left Child of a Right Child
-    // 2b. Node is a Right Child of a Left Child
-
-    // Solution for Case 2:
-    // 1a. Right rotate around Parent for 2a = Case 3
-    // 1b. Left rotate around Parent for 2b = Case 3
-    // 2. Parent becomes the new node to check for violations
-
-    // Case 3:
-    // 1. Uncle is Black
-    // 2a. Node is a Right Child of a Right Child
-    // 2b. Node is a Left Child of a Left Child
-
-    // Solution for Case 3:
-    // 1a. Left rotate around Grandparent for 2a
-    // 1b. Right rotate around Grandparent for 2b
-    // 2. Swap colors of Parent and Grandparent
-    // 3. Grandparent becomes the new node to check for violations
-    self.Insert = function(item) {
-        var node = TreeInsert(item);
-        while (node != rootNode) {
-        	if(node.Value == 4){
-        		debugger;
-        	}
+    function RebalenceTree(node){
+    	while (node != rootNode && (node.Parent() && node.Parent().Color == node.ValidColors.Red)) {
             if (node.Uncle() && node.Uncle().Color == node.ValidColors.Red) { //Uncle is Red
                 node.Parent().SwapColors();
                 node.Grandparent().SwapColors();
@@ -310,6 +281,30 @@ exports.RedBlackTree = function() {
         }
     }
 
+    //////////////////
+    //Public Methods
+    //////////////////
+
+    self.Depth = function(starterNode) {
+        function DepthHelper(node) {
+            if (node.NilNode) {
+                return 0;
+            } else {
+                return Math.max(DepthHelper(node.Left()), DepthHelper(node.Right())) + 1;
+            }
+        }
+        if (!starterNode) {
+            starterNode = rootNode;
+        }
+
+        return DepthHelper(starterNode);
+    }
+
+    self.Insert = function(item) {
+        var node = TreeInsert(item);
+        RebalenceTree(node);
+    }
+
     self.Delete = function(item) {
 
     }
@@ -335,7 +330,6 @@ exports.RedBlackTree = function() {
                 var distance = obj[1];
 
                 if (node.NilNode) {
-                    process.stdout.write(" ");
                     continue;
                 }
 
@@ -370,13 +364,14 @@ if (require.main === module) {
     foo.Insert(2);
     foo.Insert(3);
     foo.Insert(4);
-    //foo.Insert(5);
-    //foo.Insert(6);
-    // foo.Insert(-1);
-    // foo.Insert(-2);
-    // foo.Insert(0);
-    // foo.Insert(2);
-    // foo.Insert(10);
+    foo.Insert(5);
+    foo.Insert(6);
+    foo.Insert(7);
+    foo.Insert(-1);
+    foo.Insert(-2);
+    foo.Insert(0);
+    foo.Insert(2);
+    foo.Insert(10);
     foo.PrintTree();
     //console.log(foo.Depth());
 }
