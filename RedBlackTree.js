@@ -140,6 +140,11 @@ exports.RedBlackTree = function(userCompareFunction) {
         };
 
         self.RemoveParent = function(){
+        	if(self.IsRightChild()){
+				self.Parent().RemoveRight();
+			} else if (self.IsLeftChild()) {
+				self.Parent().RemoveLeft();
+			}
         	parent = undefined;
         }
 
@@ -209,6 +214,19 @@ exports.RedBlackTree = function(userCompareFunction) {
     	}
     }
 
+    function MinNode(startNode){
+    	var node = rootNode;
+    	if(startNode){
+    		node = startNode;
+    	}
+
+    	if(node.Left().NilNode){
+    		return node
+    	} else {
+    		return MinNode(node.Left());
+    	}
+    }
+
     function TreeInsert(item) {
         var newNode = undefined;
         if (rootNode == undefined) {
@@ -238,8 +256,92 @@ exports.RedBlackTree = function(userCompareFunction) {
         return newNode;
     }
 
-    function RebalenceTree(node){
-    	while (node != rootNode && (node.Parent() && node.Parent().Color == node.ValidColors.Red)) {
+    function TreeDelete(item){
+        var node = rootNode;
+        var result = undefined;
+
+    	while(node && !node.NilNode){
+    		if(compareFunction(item, node.Value) == 0){
+    			break; //Found the node
+    		} else if (compareFunction(item, node.Value) < 0){ //Check left tree
+    			node = node.Left();
+    		} else { // > 0 and check right tree
+    			node = node.Right();
+    		}
+    	}
+
+    	//Found the node.  Now, remove it
+    	result = node.Value;
+		if(node.Left().NilNode && node.Right().NilNode){ //Leaf node
+			if(node.IsRightChild()){
+				node.Parent().RemoveRight();
+			} else if (node.IsLeftChild()) {
+				node.Parent().RemoveLeft();
+			}
+			delete node;
+		} else if (!node.Left().NilNode && node.Right().NilNode){ //Has a right child
+			if(node.IsRightChild()){
+				node.Parent().Right(node.Left());
+			} else if (node.IsLeftChild()) {
+				node.Parent().Left(node.Left());
+			} else { //rootNode
+				rootNode = node.Left();
+			}
+			delete node;
+		} else if (node.Left().NilNode && !node.Right().NilNode){ //Has a left child
+			if(node.IsRightChild()){
+				node.Parent().Right(node.Right());
+			} else if (node.IsLeftChild()) {
+				node.Parent().Left(node.Right());
+			} else { //rootNode
+				rootNode = node.Right();
+			}
+
+
+			delete node;
+		} else { //Two children
+			var minRightNode = MinNode(node.Right());
+			minRightNode.RemoveParent();
+
+			if(node.IsRightChild()){
+				node.Parent().Right(minRightNode);
+			} else if (node.IsLeftChild()) {
+				node.Parent().Left(minRightNode);
+			} else {//rootNode
+				rootNode = minRightNode;
+			}
+
+			minRightNode.Right(node.Right());
+			minRightNode.Left(node.Left());
+
+			delete node;
+		}
+
+    	return result;
+    }
+
+    //////////////////
+    //Public Methods
+    //////////////////
+
+    self.Depth = function(starterNode) {
+        function DepthHelper(node) {
+            if (node.NilNode) {
+                return 0;
+            } else {
+                return Math.max(DepthHelper(node.Left()), DepthHelper(node.Right())) + 1;
+            }
+        }
+        if (!starterNode) {
+            starterNode = rootNode;
+        }
+
+        return DepthHelper(starterNode);
+    }
+
+    self.Insert = function(item) {
+        var node = TreeInsert(item);
+        while (node != rootNode && (node.Parent() && node.Parent().Color == node.ValidColors.Red)) {
             if (node.Uncle() && node.Uncle().Color == node.ValidColors.Red) { //Uncle is Red
                 node.Parent().SwapColors();
                 node.Grandparent().SwapColors();
@@ -281,32 +383,8 @@ exports.RedBlackTree = function(userCompareFunction) {
         }
     }
 
-    //////////////////
-    //Public Methods
-    //////////////////
-
-    self.Depth = function(starterNode) {
-        function DepthHelper(node) {
-            if (node.NilNode) {
-                return 0;
-            } else {
-                return Math.max(DepthHelper(node.Left()), DepthHelper(node.Right())) + 1;
-            }
-        }
-        if (!starterNode) {
-            starterNode = rootNode;
-        }
-
-        return DepthHelper(starterNode);
-    }
-
-    self.Insert = function(item) {
-        var node = TreeInsert(item);
-        RebalenceTree(node);
-    }
-
     self.Delete = function(item) {
-
+    	return TreeDelete(item);
     }
 
     self.Contains = function(item) {
@@ -386,8 +464,8 @@ if (require.main === module) {
     foo.Insert(10);
     foo.PrintTree();
 
-    console.log("Contains 9: " + foo.Contains(9));
-    console.log("Contains 10: " + foo.Contains(10));
-    console.log("Contains 0: " + foo.Contains(0));
+    foo.Delete(4);
+
+    foo.PrintTree();
     //console.log(foo.Depth());
 }
