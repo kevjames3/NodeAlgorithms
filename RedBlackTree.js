@@ -16,12 +16,12 @@ exports.RedBlackTree = function(userCompareFunction) {
     //Init
     var self = this;
     var rootNode;
-    var compareFunction = function(val1, val2){
-    	return val1 - val2;
+    var compareFunction = function(val1, val2) {
+        return val1 - val2;
     }
 
-    if(userCompareFunction){
-    	compareFunction = userCompareFunction;
+    if (userCompareFunction) {
+        compareFunction = userCompareFunction;
     }
 
     //////////////////
@@ -139,92 +139,92 @@ exports.RedBlackTree = function(userCompareFunction) {
             return parent;
         };
 
-        self.RemoveParent = function(){
-        	if(self.IsRightChild()){
-				self.Parent().RemoveRight();
-			} else if (self.IsLeftChild()) {
-				self.Parent().RemoveLeft();
-			}
-        	parent = undefined;
+        self.RemoveParent = function() {
+            if (self.IsRightChild()) {
+                self.Parent().RemoveRight();
+            } else if (self.IsLeftChild()) {
+                self.Parent().RemoveLeft();
+            }
+            parent = undefined;
         }
 
-        self.RemoveLeft = function(){
-        	left = undefined;
+        self.RemoveLeft = function() {
+            left = undefined;
         }
 
-        self.RemoveRight = function(){
-        	right = undefined;
+        self.RemoveRight = function() {
+            right = undefined;
         }
 
         return self;
     }
 
     function RotateLeft(node) {
-    	var nodeParent = node.Parent();
-    	var rightChild = node.Right();
-    	var rightChildsLeft = rightChild.Left();
+        var nodeParent = node.Parent();
+        var rightChild = node.Right();
+        var rightChildsLeft = rightChild.Left();
 
-    	//Rotate
-    	if(nodeParent){
-    		if(node.IsRightChild()){
-    			nodeParent.Right(rightChild); 
-	    	} else {
-	    		nodeParent.Left(rightChild);
-	    	}
-    	}
-    	
-    	rightChild.Left(node);
-    	if(!rightChildsLeft.NilNode){
-    		node.Right(rightChildsLeft);
-    	} else {
-    		node.RemoveRight();
-    	}
-    	
+        //Rotate
+        if (nodeParent) {
+            if (node.IsRightChild()) {
+                nodeParent.Right(rightChild);
+            } else {
+                nodeParent.Left(rightChild);
+            }
+        }
 
-    	if(node == rootNode){
-    		rootNode = rightChild;
-    		rootNode.RemoveParent();
-    	}
+        rightChild.Left(node);
+        if (!rightChildsLeft.NilNode) {
+            node.Right(rightChildsLeft);
+        } else {
+            node.RemoveRight();
+        }
+
+
+        if (node == rootNode) {
+            rootNode = rightChild;
+            rootNode.RemoveParent();
+        }
     }
 
     function RotateRight(node) {
-    	var nodeParent = node.Parent();
-    	var leftChild = node.Left();
-    	var leftChildsRight = leftChild.Right();
+        var nodeParent = node.Parent();
+        var leftChild = node.Left();
+        var leftChildsRight = leftChild.Right();
 
-    	//Rotate
-    	if(nodeParent){
-    		if(node.IsRightChild()){
-    			nodeParent.Right(leftChild); 
-	    	} else {
-	    		nodeParent.Left(leftChild);
-	    	}
-    	}
+        //Rotate
+        if (nodeParent) {
+            if (node.IsRightChild()) {
+                nodeParent.Right(leftChild);
+            } else {
+                nodeParent.Left(leftChild);
+            }
+        }
 
-    	leftChild.Right(node);
-    	if(!leftChildsRight.NilNode){
-    		node.Right(rightChildsLeft);
-    	} else {
-    		node.RemoveLeft();
-    	}
+        leftChild.Right(node);
+        if (!leftChildsRight.NilNode) {
+            node.Right(rightChildsLeft);
+        } else {
+            node.RemoveLeft();
+        }
 
-    	if(node == rootNode){
-    		rootNode = leftChild;
-    		rootNode.RemoveParent();
-    	}
+        if (node == rootNode) {
+            rootNode = leftChild;
+            rootNode.RemoveParent();
+        }
     }
 
-    function MinNode(startNode){
-    	var node = rootNode;
-    	if(startNode){
-    		node = startNode;
-    	}
+    function MinNode(startNode) {
+        var node = rootNode;
+        if (startNode) {
+            node = startNode;
+        }
 
-    	if(node.Left().NilNode){
-    		return node
-    	} else {
-    		return MinNode(node.Left());
-    	}
+        if (node.Left().NilNode) {
+            return node
+        } else {
+            return MinNode(node.Left());
+        }
     }
 
     function TreeInsert(item) {
@@ -256,68 +256,67 @@ exports.RedBlackTree = function(userCompareFunction) {
         return newNode;
     }
 
-    function TreeDelete(item){
+    function TreeDelete(item) {
         var node = rootNode;
         var result = undefined;
 
-    	while(node && !node.NilNode){
-    		if(compareFunction(item, node.Value) == 0){
-    			break; //Found the node
-    		} else if (compareFunction(item, node.Value) < 0){ //Check left tree
-    			node = node.Left();
-    		} else { // > 0 and check right tree
-    			node = node.Right();
-    		}
-    	}
+        while (node && !node.NilNode) {
+            if (compareFunction(item, node.Value) == 0) {
+                break; //Found the node
+            } else if (compareFunction(item, node.Value) < 0) { //Check left tree
+                node = node.Left();
+            } else { // > 0 and check right tree
+                node = node.Right();
+            }
+        }
 
-    	//Found the node.  Now, remove it
-    	result = node.Value;
-		if(node.Left().NilNode && node.Right().NilNode){ //Leaf node
-			if(node.IsRightChild()){
-				node.Parent().RemoveRight();
-			} else if (node.IsLeftChild()) {
-				node.Parent().RemoveLeft();
-			}
-			delete node;
-		} else if (!node.Left().NilNode && node.Right().NilNode){ //Has a right child
-			if(node.IsRightChild()){
-				node.Parent().Right(node.Left());
-			} else if (node.IsLeftChild()) {
-				node.Parent().Left(node.Left());
-			} else { //rootNode
-				rootNode = node.Left();
-			}
-			delete node;
-		} else if (node.Left().NilNode && !node.Right().NilNode){ //Has a left child
-			if(node.IsRightChild()){
-				node.Parent().Right(node.Right());
-			} else if (node.IsLeftChild()) {
-				node.Parent().Left(node.Right());
-			} else { //rootNode
-				rootNode = node.Right();
-			}
+        //Found the node.  Now, remove it
+        result = node.Value;
+        if (node.Left().NilNode && node.Right().NilNode) { //Leaf node
+            if (node.IsRightChild()) {
+                node.Parent().RemoveRight();
+            } else if (node.IsLeftChild()) {
+                node.Parent().RemoveLeft();
+            }
+            delete node;
+        } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a right child
+            if (node.IsRightChild()) {
+                node.Parent().Right(node.Left());
+            } else if (node.IsLeftChild()) {
+                node.Parent().Left(node.Left());
+            } else { //rootNode
+                rootNode = node.Left();
+            }
+            delete node;
+        } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a left child
+            if (node.IsRightChild()) {
+                node.Parent().Right(node.Right());
+            } else if (node.IsLeftChild()) {
+                node.Parent().Left(node.Right());
+            } else { //rootNode
+                rootNode = node.Right();
+            }
 
+            delete node;
+        } else { //Two children
+            var minRightNode = MinNode(node.Right());
+            minRightNode.RemoveParent();
 
-			delete node;
-		} else { //Two children
-			var minRightNode = MinNode(node.Right());
-			minRightNode.RemoveParent();
+            if (node.IsRightChild()) {
+                node.Parent().Right(minRightNode);
+            } else if (node.IsLeftChild()) {
+                node.Parent().Left(minRightNode);
+            } else { //rootNode
+                rootNode = minRightNode;
+            }
 
-			if(node.IsRightChild()){
-				node.Parent().Right(minRightNode);
-			} else if (node.IsLeftChild()) {
-				node.Parent().Left(minRightNode);
-			} else {//rootNode
-				rootNode = minRightNode;
-			}
+            minRightNode.Right(node.Right());
+            minRightNode.Left(node.Left());
 
-			minRightNode.Right(node.Right());
-			minRightNode.Left(node.Left());
+            delete node;
+        }
 
-			delete node;
-		}
-
-    	return result;
+        return result;
     }
 
     //////////////////
@@ -384,23 +383,23 @@ exports.RedBlackTree = function(userCompareFunction) {
     }
 
     self.Delete = function(item) {
-    	return TreeDelete(item);
+        return TreeDelete(item);
     }
 
     self.Contains = function(item) {
-    	var result = false;
-    	var node = rootNode;
-    	while(!node.NilNode){
-    		if(compareFunction(item, node.Value) == 0){
-    			result = true;
-    			break;
-    		} else if(compareFunction(item, node.Value) < 0){
-    			node = node.Left();
-    		} else { // > 0
-    			node = node.Right();
-    		}
-    	}
-    	return result;
+        var result = false;
+        var node = rootNode;
+        while (!node.NilNode) {
+            if (compareFunction(item, node.Value) == 0) {
+                result = true;
+                break;
+            } else if (compareFunction(item, node.Value) < 0) {
+                node = node.Left();
+            } else { // > 0
+                node = node.Right();
+            }
+        }
+        return result;
     }
 
     self.PrintTree = function() {
