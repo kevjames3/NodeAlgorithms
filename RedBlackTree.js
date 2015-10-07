@@ -53,7 +53,7 @@ exports.RedBlackTree = function(userCompareFunction) {
 
         self.IsRightChild = function() {
             var result = false;
-            if (parent != undefined && parent.Right() == self) {
+            if ((parent != undefined && parent.Right() == self)) {
                 result = true;
             }
             return result;
@@ -106,7 +106,10 @@ exports.RedBlackTree = function(userCompareFunction) {
                 result = new Node();
                 result.Value = undefined;
                 result.Color = self.ValidColors.Black;
+                result.Parent(self);
                 result.NilNode = true;
+
+                left = result;
             }
 
             return result;
@@ -125,8 +128,11 @@ exports.RedBlackTree = function(userCompareFunction) {
             } else {
                 result = new Node();
                 result.Value = undefined;
+                result.Parent(self);
                 result.Color = self.ValidColors.Black;
                 result.NilNode = true;
+
+                right = result;
             }
 
             return result;
@@ -266,75 +272,79 @@ exports.RedBlackTree = function(userCompareFunction) {
         return newNode;
     }
 
-    //Returns the delete node with all of the references intact.
-    function TreeDelete(item) {
-        var node = rootNode;
-        var movedNode = undefined;
+    function RebalenceTreeAfterDeletion(node) {
+        //Define the colors for less headache later
+        var red = node.ValidColors.Red;
+        var black = node.ValidColors.Black;
 
-        var result = undefined;
+        while (node != rootNode) { //Case 1 check
+            var parent = node.Parent();
+            var sibling = node.Sibling();
 
-        while (node && !node.NilNode) {
-            if (compareFunction(item, node.Value) == 0) {
-                break; //Found the node
-            } else if (compareFunction(item, node.Value) < 0) { //Check left tree
-                node = node.Left();
-            } else { // > 0 and check right tree
-                node = node.Right();
+            if (sibling.Color == red) { //Case 2
+                //We need to rotate
+                if (sibling.IsRightChild()) {
+                    RotateLeft(parent);
+                } else if (sibling.IsLeftChild()) {
+                    RotateRight(parent);
+                }
+
+                parent.SwapColors();
+                sibling.SwapColors();
             }
+
+            if (parent.Color == black &&
+                sibling.Color == black &&
+                sibling.Left().Color == black &&
+                sibling.Right().Color == black) { // Case 3
+
+                sibling.Color = red;
+                node = parent;
+                continue; //Go back to case 1 checking against the parent
+            }
+
+            if (parent.Color == red &&
+                sibling.Color == black &&
+                sibling.Left().Color == black &&
+                sibling.Right().Color == black) { // Case 4
+
+                sibling.Color = red;
+                parent.Color = black;
+                continue; //Go back to case 1, checking with current node
+            }
+
+            if (sibling.Color == black) { // Case 5
+            	debugger;
+                if (sibling.Left().Color == black &&
+                    sibling.Right().Color == red &&
+                    node.IsLeftChild()) {
+
+                    sibling.Color = red;
+                    sibling.Right().Color = black;
+                    RotateRight(sibling);
+                } else if (sibling.Left().Color == red &&
+                    sibling.Right().Color == black &&
+                    node.IsRightChild()) {
+
+                    sibling.Color = red;
+                    sibling.Left().Color = black;
+                    RotateLeft(sibling);
+                }
+            }
+
+            //Case 6
+            sibling.Color = parent.Color;
+            parent.Color = black;
+            if (node.IsLeftChild()) {
+                sibling.Right().Color = black;
+                RotateLeft(parent);
+            } else if (node.IsRightChild()) {
+                sibling.Left().Color = black;
+                RotateRight(parent);
+            }
+
+            break; //if we get this far, we are done!
         }
-
-        //Found the node.  Now, remove it
-        if (node.Left().NilNode && node.Right().NilNode) { //Leaf node
-            if (node.IsRightChild()) {
-                node.Parent().RemoveRight();
-            } else if (node.IsLeftChild()) {
-                node.Parent().RemoveLeft();
-            }
-
-        } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a left child
-            movedNode = node.Left();
-            if (node.IsRightChild()) {
-                node.Parent().Right(node.Left());
-            } else if (node.IsLeftChild()) {
-                node.Parent().Left(node.Left());
-            } else { //rootNode
-                rootNode = node.Left();
-            }
-
-        } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a right child
-            movedNode = node.Right();
-            if (node.IsRightChild()) {
-                node.Parent().Right(node.Right());
-            } else if (node.IsLeftChild()) {
-                node.Parent().Left(node.Right());
-            } else { //rootNode
-                rootNode = node.Right();
-            }
-        } else { //Two children
-            var minRightNode = MinNode(node.Left()); //In order traversal
-            minRightNode.RemoveParent();
-
-            if (node.IsRightChild()) {
-                node.Parent().Right(minRightNode);
-            } else if (node.IsLeftChild()) {
-                node.Parent().Left(minRightNode);
-            } else { //rootNode
-                rootNode = minRightNode;
-            }
-
-            minRightNode.Right(node.Right());
-            minRightNode.Left(node.Left());
-            movedNode = minRightNode;
-        }
-
-        if (node) { //Only return a result if we found the node to delete
-            result = {
-                removedNode: node,
-                movedNode: movedNode
-            }
-        }
-
-        return result;
     }
 
     //////////////////
@@ -401,103 +411,93 @@ exports.RedBlackTree = function(userCompareFunction) {
     }
 
     self.Delete = function(item) {
-        var result = TreeDelete(item);
-        var resultValue = undefined;
+        var node = rootNode;
+        var movedNode = undefined;
 
-        if (result) { //It will only rebalence if it could get an actual result
-            var removedNode = result.removedNode;
-            var node = result.movedNode; //aka the node that was used to replace removedNode
+        var result = undefined;
 
-            if (removedNode && node) {
-                //Define the colors for less headache later
-                var red = node.ValidColors.Red;
-                var black = node.ValidColors.Black;
-
-                if (removedNode.Color == black) {
-                    if (node.Color == red) {
-                        node.Color = black;
-                    } else {
-                        while (node != rootNode) { //Case 1 check
-                            debugger;
-                            var parent = node.Parent();
-                            var sibling = node.Sibling();
-
-                            if (sibling.Color == red) { //Case 2
-                                //We need to rotate
-                                if (sibling.IsRightChild()) {
-                                    RotateLeft(parent);
-                                } else if (sibling.IsLeftChild()) {
-                                    RotateRight(parent);
-                                }
-
-                                parent.SwapColors();
-                                sibling.SwapColors();
-
-                                // Case 3
-                                if (parent.Color == black &&
-                                    sibling.Color == black &&
-                                    sibling.Left().Color == black &&
-                                    sibling.Right().Color == black) {
-
-                                    sibling.Color = red;
-                                    node = parent;
-                                    continue; //Go back to case 1 checking against the parent
-                                }
-
-                                if (parent.Color == red &&
-                                    sibling.Color == black &&
-                                    sibling.Left().Color == black &&
-                                    sibling.Right().Color == black) { // Case 4
-
-                                    sibling.Color = red;
-                                    parent.Color = black;
-                                    continue; //Go back to case 1, checking with current node
-                                }
-
-                                if (sibling.Color == black) { // Case 5
-                                    if (sibling.Left().Color == red &&
-                                        sibling.Right().Color == black &&
-                                        node.IsLeftChild()) {
-
-                                        sibling.Color = red;
-                                        sibling.Left().Color = black;
-                                        RotateRight(sibling);
-                                    } else if (sibling.Left().Color == black &&
-                                        sibling.Right().Color == red &&
-                                        node.IsRightChild()) {
-
-                                        sibling.Color = red;
-                                        sibling.Right().Color = black;
-                                        RotateLeft(sibling);
-                                    }
-                                }
-
-                                //Case 6
-                                sibling.Color = parent.Color;
-                                parent.Color = black;
-                                if (node.IsLeftChild()) {
-                                    sibling.Right().Color = black;
-                                    RotateLeft(parent);
-                                } else if (node.IsRightChild()) {
-                                    sibling.Left().Color = black;
-                                    RotateRight(parent);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (node == rootNode) {
-                    node.Color = black;
-                }
+        while (node && !node.NilNode) {
+            if (compareFunction(item, node.Value) == 0) {
+                break; //Found the node
+            } else if (compareFunction(item, node.Value) < 0) { //Check left tree
+                node = node.Left();
+            } else { // > 0 and check right tree
+                node = node.Right();
             }
         }
 
-        if (result && result.removedNode) {
-            resultValue = result.removedNode.Value
+        var parent = node.Parent();
+        //Define the colors for less headache later
+        var red = node.ValidColors.Red;
+        var black = node.ValidColors.Black;
+
+        //Found the node.  Now, remove it
+        if (node.Left().NilNode && node.Right().NilNode) { //Leaf node
+            if (node.IsRightChild()) {
+                parent.RemoveRight();
+                RebalenceTreeAfterDeletion(parent.Right()); //Will be a NilNode
+            } else if (node.IsLeftChild()) {
+                parent.RemoveLeft();
+                RebalenceTreeAfterDeletion(parent.Left()); //Will be a NilNode
+            }
+            
+        } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a left child
+            movedNode = node.Left();
+            if (node.IsRightChild()) {
+                parent.Right(node.Left());
+            } else if (node.IsLeftChild()) {
+                parent.Left(node.Left());
+            } else { //rootNode
+                rootNode = node.Left();
+            }
+            if(node.Color == black && movedNode != rootNode){
+            	if(movedNode.Color == red){
+            		movedNode.Color = black;
+            	} else {
+            		RebalenceTreeAfterDeletion(movedNode);
+            	}
+            }
+
+        } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a right child
+            movedNode = node.Right();
+            if (node.IsRightChild()) {
+                parent.Right(node.Right());
+            } else if (node.IsLeftChild()) {
+                parent.Left(node.Right());
+            } else { //rootNode
+                rootNode = node.Right();
+            }
+            if(node.Color == black && movedNode != rootNode){
+            	if(movedNode.Color == red){
+            		movedNode.Color = black;
+            	} else {
+            		RebalenceTreeAfterDeletion(movedNode);
+            	}
+            }
+        } else { //Two children
+            var minRightNode = MinNode(node.Left()); //In order traversal
+            minRightNode.RemoveParent();
+
+            if (node.IsRightChild()) {
+                parent.Right(minRightNode);
+            } else if (node.IsLeftChild()) {
+                parent.Left(minRightNode);
+            } else { //rootNode
+                rootNode = minRightNode;
+            }
+
+            minRightNode.Right(node.Right());
+            minRightNode.Left(node.Left());
+            movedNode = minRightNode;
+
+            RebalenceTreeAfterDeletion(movedNode.Left());
         }
 
-        return resultValue;
+        if (node) { //Only return a result if we found the node to delete
+            result = item;
+        }
+
+        return result;
     }
 
     self.Contains = function(item) {
@@ -570,14 +570,14 @@ if (require.main === module) {
     foo.Insert(5);
     foo.Insert(6);
     foo.Insert(7);
-    // foo.Insert(-1);
+    foo.Insert(-1);
     // foo.Insert(-2);
     // foo.Insert(0);
     // foo.Insert(2);
     // foo.Insert(10);
     foo.PrintTree();
 
-    foo.Delete(4);
+    foo.Delete(2);
 
     foo.PrintTree();
     //console.log(foo.Depth());
