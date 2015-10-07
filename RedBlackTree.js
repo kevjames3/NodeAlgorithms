@@ -139,6 +139,16 @@ exports.RedBlackTree = function(userCompareFunction) {
             return parent;
         };
 
+        self.Sibling = function() {
+            var result = undefined;
+            if (self.IsRightChild()) {
+                result = self.Parent().Left();
+            } else if (self.IsLeftChild()) {
+                result = self.Parent().Right();
+            }
+            return result;
+        }
+
         self.RemoveParent = function() {
             if (self.IsRightChild()) {
                 self.Parent().RemoveRight();
@@ -256,8 +266,11 @@ exports.RedBlackTree = function(userCompareFunction) {
         return newNode;
     }
 
+    //Returns the delete node with all of the references intact.
     function TreeDelete(item) {
         var node = rootNode;
+        var movedNode = undefined;
+
         var result = undefined;
 
         while (node && !node.NilNode) {
@@ -271,15 +284,15 @@ exports.RedBlackTree = function(userCompareFunction) {
         }
 
         //Found the node.  Now, remove it
-        result = node.Value;
         if (node.Left().NilNode && node.Right().NilNode) { //Leaf node
             if (node.IsRightChild()) {
                 node.Parent().RemoveRight();
             } else if (node.IsLeftChild()) {
                 node.Parent().RemoveLeft();
             }
-            delete node;
-        } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a right child
+
+        } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a left child
+            movedNode = node.Left();
             if (node.IsRightChild()) {
                 node.Parent().Right(node.Left());
             } else if (node.IsLeftChild()) {
@@ -287,8 +300,9 @@ exports.RedBlackTree = function(userCompareFunction) {
             } else { //rootNode
                 rootNode = node.Left();
             }
-            delete node;
-        } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a left child
+
+        } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a right child
+            movedNode = node.Right();
             if (node.IsRightChild()) {
                 node.Parent().Right(node.Right());
             } else if (node.IsLeftChild()) {
@@ -296,10 +310,8 @@ exports.RedBlackTree = function(userCompareFunction) {
             } else { //rootNode
                 rootNode = node.Right();
             }
-
-            delete node;
         } else { //Two children
-            var minRightNode = MinNode(node.Right());
+            var minRightNode = MinNode(node.Left()); //In order traversal
             minRightNode.RemoveParent();
 
             if (node.IsRightChild()) {
@@ -312,8 +324,14 @@ exports.RedBlackTree = function(userCompareFunction) {
 
             minRightNode.Right(node.Right());
             minRightNode.Left(node.Left());
+            movedNode = minRightNode;
+        }
 
-            delete node;
+        if (node) { //Only return a result if we found the node to delete
+            result = {
+                removedNode: node,
+                movedNode: movedNode
+            }
         }
 
         return result;
@@ -383,7 +401,103 @@ exports.RedBlackTree = function(userCompareFunction) {
     }
 
     self.Delete = function(item) {
-        return TreeDelete(item);
+        var result = TreeDelete(item);
+        var resultValue = undefined;
+
+        if (result) { //It will only rebalence if it could get an actual result
+            var removedNode = result.removedNode;
+            var node = result.movedNode; //aka the node that was used to replace removedNode
+
+            if (removedNode && node) {
+                //Define the colors for less headache later
+                var red = node.ValidColors.Red;
+                var black = node.ValidColors.Black;
+
+                if (removedNode.Color == black) {
+                    if (node.Color == red) {
+                        node.Color = black;
+                    } else {
+                        while (node != rootNode) { //Case 1 check
+                            debugger;
+                            var parent = node.Parent();
+                            var sibling = node.Sibling();
+
+                            if (sibling.Color == red) { //Case 2
+                                //We need to rotate
+                                if (sibling.IsRightChild()) {
+                                    RotateLeft(parent);
+                                } else if (sibling.IsLeftChild()) {
+                                    RotateRight(parent);
+                                }
+
+                                parent.SwapColors();
+                                sibling.SwapColors();
+
+                                // Case 3
+                                if (parent.Color == black &&
+                                    sibling.Color == black &&
+                                    sibling.Left().Color == black &&
+                                    sibling.Right().Color == black) {
+
+                                    sibling.Color = red;
+                                    node = parent;
+                                    continue; //Go back to case 1 checking against the parent
+                                }
+
+                                if (parent.Color == red &&
+                                    sibling.Color == black &&
+                                    sibling.Left().Color == black &&
+                                    sibling.Right().Color == black) { // Case 4
+
+                                    sibling.Color = red;
+                                    parent.Color = black;
+                                    continue; //Go back to case 1, checking with current node
+                                }
+
+                                if (sibling.Color == black) { // Case 5
+                                    if (sibling.Left().Color == red &&
+                                        sibling.Right().Color == black &&
+                                        node.IsLeftChild()) {
+
+                                        sibling.Color = red;
+                                        sibling.Left().Color = black;
+                                        RotateRight(sibling);
+                                    } else if (sibling.Left().Color == black &&
+                                        sibling.Right().Color == red &&
+                                        node.IsRightChild()) {
+
+                                        sibling.Color = red;
+                                        sibling.Right().Color = black;
+                                        RotateLeft(sibling);
+                                    }
+                                }
+
+                                //Case 6
+                                sibling.Color = parent.Color;
+                                parent.Color = black;
+                                if (node.IsLeftChild()) {
+                                    sibling.Right().Color = black;
+                                    RotateLeft(parent);
+                                } else if (node.IsRightChild()) {
+                                    sibling.Left().Color = black;
+                                    RotateRight(parent);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (node == rootNode) {
+                    node.Color = black;
+                }
+            }
+        }
+
+        if (result && result.removedNode) {
+            resultValue = result.removedNode.Value
+        }
+
+        return resultValue;
     }
 
     self.Contains = function(item) {
@@ -456,11 +570,11 @@ if (require.main === module) {
     foo.Insert(5);
     foo.Insert(6);
     foo.Insert(7);
-    foo.Insert(-1);
-    foo.Insert(-2);
-    foo.Insert(0);
-    foo.Insert(2);
-    foo.Insert(10);
+    // foo.Insert(-1);
+    // foo.Insert(-2);
+    // foo.Insert(0);
+    // foo.Insert(2);
+    // foo.Insert(10);
     foo.PrintTree();
 
     foo.Delete(4);
