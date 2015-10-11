@@ -219,7 +219,7 @@ exports.RedBlackTree = function(userCompareFunction) {
 
         leftChild.Right(node);
         if (!leftChildsRight.NilNode) {
-            node.Right(rightChildsLeft);
+            node.Right(leftChildsRight);
         } else {
             node.RemoveLeft();
         }
@@ -434,10 +434,14 @@ exports.RedBlackTree = function(userCompareFunction) {
         if (node.Left().NilNode && node.Right().NilNode) { //Leaf node
             if (node.IsRightChild()) {
                 parent.RemoveRight();
-                RebalenceTreeAfterDeletion(parent.Right()); //Will be a NilNode
+                if(node.Color == black){
+                	RebalenceTreeAfterDeletion(parent.Right()); //Will be a NilNode
+                }
             } else if (node.IsLeftChild()) {
                 parent.RemoveLeft();
-                RebalenceTreeAfterDeletion(parent.Left()); //Will be a NilNode
+                if(node.Color == black){
+                	RebalenceTreeAfterDeletion(parent.Left()); //Will be a NilNode
+                }
             }
             
         } else if (!node.Left().NilNode && node.Right().NilNode) { //Has a left child
@@ -571,13 +575,13 @@ if (require.main === module) {
     foo.Insert(6);
     foo.Insert(7);
     foo.Insert(-1);
-    // foo.Insert(-2);
-    // foo.Insert(0);
-    // foo.Insert(2);
-    // foo.Insert(10);
+    foo.Insert(-2);
+    foo.Insert(0);
+    foo.Insert(2);
+    foo.Insert(10);
     foo.PrintTree();
 
-    //foo.Delete(2);
+    foo.Delete(3);
 
     foo.PrintTree();
     //console.log(foo.Depth());
