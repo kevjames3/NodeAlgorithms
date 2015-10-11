@@ -230,16 +230,16 @@ exports.RedBlackTree = function(userCompareFunction) {
         }
     }
 
-    function MinNode(startNode) {
+    function MaxNode(startNode) {
         var node = rootNode;
         if (startNode) {
             node = startNode;
         }
 
-        if (node.Left().NilNode) {
+        if (node.Right().NilNode) {
             return node
         } else {
-            return MinNode(node.Left());
+            return MaxNode(node.Right());
         }
     }
 
@@ -314,7 +314,6 @@ exports.RedBlackTree = function(userCompareFunction) {
             }
 
             if (sibling.Color == black) { // Case 5
-            	debugger;
                 if (sibling.Left().Color == black &&
                     sibling.Right().Color == red &&
                     node.IsLeftChild()) {
@@ -457,7 +456,6 @@ exports.RedBlackTree = function(userCompareFunction) {
             		RebalenceTreeAfterDeletion(movedNode);
             	}
             }
-
         } else if (node.Left().NilNode && !node.Right().NilNode) { //Has a right child
             movedNode = node.Right();
             if (node.IsRightChild()) {
@@ -475,7 +473,7 @@ exports.RedBlackTree = function(userCompareFunction) {
             	}
             }
         } else { //Two children
-            var minRightNode = MinNode(node.Left()); //In order traversal
+            var minRightNode = MaxNode(node.Left()); //In order traversal
             minRightNode.RemoveParent();
 
             if (node.IsRightChild()) {
@@ -489,8 +487,10 @@ exports.RedBlackTree = function(userCompareFunction) {
             minRightNode.Right(node.Right());
             minRightNode.Left(node.Left());
             movedNode = minRightNode;
-
-            RebalenceTreeAfterDeletion(movedNode.Left());
+            movedNode.Left().Color = black;
+            if(movedNode.Color == red){
+            	RebalenceTreeAfterDeletion(movedNode.Left());
+            }  
         }
 
         if (node) { //Only return a result if we found the node to delete
@@ -577,7 +577,7 @@ if (require.main === module) {
     // foo.Insert(10);
     foo.PrintTree();
 
-    foo.Delete(2);
+    //foo.Delete(2);
 
     foo.PrintTree();
     //console.log(foo.Depth());
