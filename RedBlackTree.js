@@ -68,19 +68,19 @@ exports.RedBlackTree = function(userCompareFunction) {
         }
 
         self.Uncle = function() {
-            var result = undefined;
-            if (self.IsRightChild()) {
-                if (self.Grandparent() != undefined) {
-                    result = self.Grandparent().Left();
-                    if (result == undefined) {
-                        result = new Node();
-                    }
-                }
-            } else if (self.IsLeftChild()) {
-                if (self.Grandparent() != undefined) {
-                    result = self.Grandparent().Right();
-                }
-            }
+            var result = self.Parent().Sibling();
+            // if (self.Parent().IsRightChild()) {
+            //     if (self.Grandparent() != undefined) {
+            //         result = self.Grandparent().Left();
+            //         if (result == undefined) {
+            //             result = new Node();
+            //         }
+            //     }
+            // } else if (self.Parent().IsLeftChild()) {
+            //     if (self.Grandparent() != undefined) {
+            //         result = self.Grandparent().Right();
+            //     }
+            // }
             return result;
         }
 
@@ -314,20 +314,20 @@ exports.RedBlackTree = function(userCompareFunction) {
             }
 
             if (sibling.Color == black) { // Case 5
-                if (sibling.Left().Color == black &&
-                    sibling.Right().Color == red &&
+                if (sibling.Right().Color == red &&
                     node.IsLeftChild()) {
 
                     sibling.Color = red;
                     sibling.Right().Color = black;
-                    RotateRight(sibling);
+                    
+                    RotateLeft(parent);
                 } else if (sibling.Left().Color == red &&
-                    sibling.Right().Color == black &&
                     node.IsRightChild()) {
 
                     sibling.Color = red;
                     sibling.Left().Color = black;
-                    RotateLeft(sibling);
+                    
+                    RotateRight(parent);
                 }
             }
 
@@ -336,10 +336,8 @@ exports.RedBlackTree = function(userCompareFunction) {
             parent.Color = black;
             if (node.IsLeftChild()) {
                 sibling.Right().Color = black;
-                RotateLeft(parent);
             } else if (node.IsRightChild()) {
                 sibling.Left().Color = black;
-                RotateRight(parent);
             }
 
             break; //if we get this far, we are done!
@@ -479,19 +477,21 @@ exports.RedBlackTree = function(userCompareFunction) {
         } else { //Two children
             var minRightNode = MaxNode(node.Left()); //In order traversal
             minRightNode.RemoveParent();
+            movedNode = minRightNode;
 
             if (node.IsRightChild()) {
-                parent.Right(minRightNode);
+                parent.Right(movedNode);
             } else if (node.IsLeftChild()) {
-                parent.Left(minRightNode);
+                parent.Left(movedNode);
             } else { //rootNode
-                rootNode = minRightNode;
+                rootNode = movedNode;
             }
 
-            minRightNode.Right(node.Right());
-            minRightNode.Left(node.Left());
-            movedNode = minRightNode;
-            movedNode.Left().Color = black;
+            movedNode.Right(node.Right());
+            movedNode.Left(node.Left());
+            movedNode.Right().Color = black;
+            movedNode.Color = node.Color;
+            
             if(movedNode.Color == red){
             	RebalenceTreeAfterDeletion(movedNode.Left());
             }  
@@ -566,23 +566,24 @@ exports.RedBlackTree = function(userCompareFunction) {
 }
 
 if (require.main === module) {
+    
+    
     var foo = new exports.RedBlackTree();
-    foo.Insert(1);
-    foo.Insert(2);
     foo.Insert(3);
     foo.Insert(4);
     foo.Insert(5);
     foo.Insert(6);
     foo.Insert(7);
-    foo.Insert(-1);
-    foo.Insert(-2);
+    foo.Insert(8);
+    foo.Insert(9);
+    foo.Insert(1);
     foo.Insert(0);
     foo.Insert(2);
-    foo.Insert(10);
+    foo.Insert(-1)
     foo.PrintTree();
 
     foo.Delete(3);
+    foo.Delete(6);
 
     foo.PrintTree();
-    //console.log(foo.Depth());
 }
