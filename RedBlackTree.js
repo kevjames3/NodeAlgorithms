@@ -566,8 +566,6 @@ exports.RedBlackTree = function(userCompareFunction) {
 }
 
 if (require.main === module) {
-    
-    
     var foo = new exports.RedBlackTree();
     foo.Insert(3);
     foo.Insert(4);
