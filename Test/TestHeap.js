@@ -23,7 +23,7 @@ describe('Heap', function () {
 	});
 
 	describe('#Remove()', function () {
-		it('It should be able to remove all elements', function(){
+		it('It should be able to remove all elements', function () {
 			heap.Add(0);
 			heap.Add(1);
 			heap.Length().should.equal(2);
@@ -58,7 +58,8 @@ describe('Heap', function () {
 				{ args: [], expected: undefined },
 				{ args: [1, 2], expected: 2 },
 				{ args: [4, 2, 3], expected: 3 },
-				{ args: [100, 20, 32, 4], expected: 20 }
+				{ args: [100, 20, 32, 4], expected: 20 },
+				{ args: [14, 17, 29, 33, 34, 72, 88, 97, -1], expected: 14 }
 			];
 
 			tests.forEach(function (test) {
@@ -71,13 +72,14 @@ describe('Heap', function () {
 				});
 			});
 		});
-		
+
 		describe('#Add()', function () {
 			var tests = [
 				{ args: [], expected: undefined },
 				{ args: [1, 2], expected: 1 },
 				{ args: [4, 2, 3], expected: 2 },
-				{ args: [100, 20, 32, 4], expected: 4 }
+				{ args: [100, 20, 32, 4], expected: 4 },
+				{ args: [14, 17, 29, 33, 34, 72, 88, 97, -1], expected: -1 }
 			];
 
 			tests.forEach(function (test) {
@@ -102,7 +104,8 @@ describe('Heap', function () {
 				{ args: [], expected: undefined },
 				{ args: [1, 2], expected: 2 },
 				{ args: [4, 2, 3], expected: 4 },
-				{ args: [100, 20, 32, 4], expected: 100 }
+				{ args: [100, 20, 32, 4], expected: 100 },
+				{ args: [1001, 202, 32, 4, 0, 25, 56], expected: 1001 },
 			];
 
 			tests.forEach(function (test) {
@@ -119,7 +122,7 @@ describe('Heap', function () {
 				});
 			});
 		});
-		
+
 		describe('#Remove()', function () {
 			var tests = [
 				{ args: [], expected: undefined },
