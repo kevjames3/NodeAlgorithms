@@ -15,6 +15,7 @@ Following data structures/algorithms I have so far...
 
 * Red-Black Tree
 * Merge Sort
+* Min/Max Heap
 
 All of the following algorithms can be simply imported.  However, if you would like to see demonstrations of them, please simply run the file in the command line.  They will both (respectivly) run example code in the main section of the code.
 
